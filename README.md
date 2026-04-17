@@ -1,51 +1,52 @@
 # APEX Schema Analyzer
 
-Herramienta para analizar páginas Oracle APEX e identificar todas las dependencias de base de datos necesarias para validar una migración entre esquemas.
+Herramienta para analizar paginas Oracle APEX e identificar dependencias de base de datos para validar migraciones entre esquemas.
 
 ## Deploy en Vercel
 
-### Opción A: Vercel CLI (más rápido)
+### Opcion A: Vercel CLI
 ```bash
 npm i -g vercel
 vercel --prod
 ```
 
-### Opción B: Vercel desde GitHub
-1. Subí esta carpeta a un repositorio GitHub
-2. Entrá a [vercel.com](https://vercel.com) → New Project
-3. Importá el repositorio
-4. Sin configuración adicional → Deploy
+### Opcion B: Vercel desde GitHub
+1. Subi esta carpeta a un repositorio GitHub.
+2. Entra a [vercel.com](https://vercel.com) y crea un proyecto nuevo.
+3. Importa el repositorio.
+4. Despliega sin configuracion adicional.
 
-### Opción C: Netlify Drag & Drop
-1. Entrá a [netlify.com/drop](https://app.netlify.com/drop)
-2. Arrastrá la carpeta `apex-analyzer`
-3. Listo ✓
+### Opcion C: Netlify Drag & Drop
+1. Entra a [netlify.com/drop](https://app.netlify.com/drop).
+2. Arrastra esta carpeta.
+3. Listo.
 
 ## Uso
 
-1. Abrí la app en el browser
-2. Ingresá tu API Key de Anthropic (`sk-ant-...`)
-3. Pegá el contenido de tu página APEX en los tabs:
-   - **Export / SQL**: código SQL, PL/SQL, dynamic actions, LOVs, validaciones
-   - **Packages / Procs**: código de packages o procedures referenciados
-   - **Contexto adicional**: esquema origen/destino, errores observados
-4. Clic en **Analizar página**
-5. Revisá el análisis: inventario de objetos, dependencias, tabla completa y checklist
-6. Exportá el resultado como `.md`
+1. Abri la app en el browser.
+2. Ingresa una API key de OpenAI (`sk-...`).
+3. Pega el contenido de tu pagina APEX en los tabs o carga un archivo `.sql`.
+4. Haz clic en **Analizar pagina**.
+5. Revisa el inventario de objetos, dependencias, riesgos y checklist.
+6. Exporta el resultado como `.md`.
 
 ## API Key
 
-La API Key se usa directamente desde el browser hacia `api.anthropic.com`.  
-No se almacena en ningún servidor ni se registra.  
-Para un deploy de equipo, considerá agregar una variable de entorno en el servidor.
+La API key se usa directamente desde el browser hacia `api.openai.com`.
+No se almacena en ningun servidor ni se registra en esta app.
 
-## Qué analiza
+Importante:
+- Debe ser una API key de OpenAI con formato `sk-...`.
+- Una suscripcion comun de ChatGPT no genera por si sola una API key; la clave se crea en [platform.openai.com](https://platform.openai.com/).
+- Si vas a usar esto en equipo, conviene mover la llamada a un backend y guardar la clave del lado del servidor.
+
+## Que analiza
 
 - Tablas directas e indirectas
-- Packages, procedures, functions
+- Packages, procedures y functions
 - Views y materialized views
 - Sequences y triggers
 - Colecciones APEX
 - Dependencias inferidas de packages
-- Checklist de validación entre esquemas
-- Riesgos por objetos faltantes
+- Checklist de validacion entre esquemas
+- Riesgos por objetos faltantes o desactualizados
