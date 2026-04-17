@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APEX Schema Analyzer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #171717;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --border2: #3a3a3a;
+      --text: #e8e4d9;
+      --text2: #8a8680;
+      --text3: #5a5650;
+      --accent: #e8a64c;
+      --accent2: #c4853a;
+      --green: #5dca9f;
+      --red: #e26060;
+      --blue: #6ca3d8;
+      --purple: #a98ed8;
+      --font: 'IBM Plex Sans', sans-serif;
+      --mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: #0f0f0f;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--text2);
+      font-family: var(--mono);
+    }
+
+    header .spacer { flex: 1; }
+
+    .api-key-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .api-key-area label {
+      font-size: 11px;
+      color: var(--text2);
+      font-family: var(--mono);
+    }
+
+    .api-key-area input {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 5px 10px;
+      width: 240px;
+      outline: none;
+    }
+
+    .api-key-area input:focus { border-color: var(--accent); }
+
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text3);
+    }
+    .dot.on { background: var(--green); }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: calc(100vh - 57px);
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      color: var(--text3);
+    }
+
+    .badge.accent { background: rgba(232,166,76,0.1); border-color: rgba(232,166,76,0.3); color: var(--accent); }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-body::-webkit-scrollbar-track { background: transparent; }
+    .panel-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    textarea {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      padding: 20px;
+      resize: none;
+      outline: none;
+    }
+
+    textarea::placeholder { color: var(--text3); }
+
+    .controls {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .btn {
+      padding: 7px 16px;
+      border-radius: 5px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0f0f0f;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      border-color: var(--border2);
+    }
+
+    .btn-ghost:hover { border-color: var(--border); color: var(--text); }
+
+    .char-count {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: var(--mono);
+      margin-left: auto;
+    }
+
+    .output-area {
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .output-area.streaming { cursor: default; }
+
+    .empty-state {
+      padding: 60px 30px;
+      text-align: center;
+      color: var(--text3);
+    }
+
+    .empty-state .icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+
+    .empty-state p { font-size: 13px; line-height: 1.7; }
+
+    .thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 20px;
+      color: var(--text2);
+      font-size: 13px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Markdown output styles */
+    .md h1 { font-size: 17px; font-weight: 600; color: var(--accent); margin: 0 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .md h2 { font-size: 14px; font-weight: 600; color: var(--text); margin: 20px 0 8px; display: flex; align-items: center; gap: 6px; }
+    .md h2::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--accent); border-radius: 2px; flex-shrink: 0; }
+    .md h3 { font-size: 13px; font-weight: 500; color: var(--text2); margin: 14px 0 6px; }
+    .md p { margin: 0 0 10px; color: var(--text); }
+    .md ul, .md ol { margin: 0 0 10px 18px; color: var(--text); }
+    .md li { margin-bottom: 3px; }
+    .md code { font-family: var(--mono); font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; color: var(--green); }
+    .md pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 12px; overflow-x: auto; margin: 0 0 10px; }
+    .md pre code { background: none; border: none; padding: 0; color: var(--text); font-size: 12px; }
+    .md strong { color: var(--accent); font-weight: 500; }
+    .md em { color: var(--text2); }
+    .md hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    .md blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text2); margin: 0 0 10px; }
+
+    /* Table styles */
+    .md table { width: 100%; border-collapse: collapse; margin: 0 0 16px; font-size: 12px; }
+    .md th { background: var(--surface2); color: var(--text2); font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 10px; text-align: left; border: 1px solid var(--border); font-weight: 500; }
+    .md td { padding: 7px 10px; border: 1px solid var(--border); color: var(--text); vertical-align: top; }
+    .md tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Priority badges */
+    .prio-alta { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-family: var(--mono); background: rgba(226,96,96,0.15); border: 1px solid rgba(226,96,96,0.3); color: #e26060; font-weight: 500; }
+    .prio-media { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-family: var(--mono); background: rgba(232,166,76,0.15); border: 1px solid rgba(232,166,76,0.3); color: var(--accent); font-weight: 500; }
+    .prio-baja { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10px; font-family: var(--mono); background: rgba(93,202,159,0.15); border: 1px solid rgba(93,202,159,0.3); color: var(--green); font-weight: 500; }
+
+    .section-divider {
+      border-top: 1px solid var(--border);
+      margin: 24px 0 16px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 8px 14px;
+      font-size: 12px;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-family: var(--mono);
+    }
+
+    .tab:hover { color: var(--text2); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .error-msg {
+      margin: 20px;
+      padding: 12px 16px;
+      background: rgba(226,96,96,0.08);
+      border: 1px solid rgba(226,96,96,0.25);
+      border-radius: 5px;
+      color: var(--red);
+      font-size: 13px;
+    }
+
+    .sample-btn {
+      font-size: 11px;
+      color: var(--blue);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: var(--mono);
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .sample-btn:hover { color: var(--text); }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; grid-template-rows: 50vh 1fr; height: auto; }
+      .panel { height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+      header { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+      .api-key-area input { width: 180px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">APX</div>
+    <div>
+      <div class="logo-text">APEX Schema Analyzer</div>
+      <div class="logo-sub">Oracle APEX · PL/SQL · Dependency Mapper</div>
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div class="api-key-area">
+    <label>API KEY</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+    <div class="dot" id="keyDot"></div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT PANEL: Input -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Entrada APEX</span>
+      <span class="badge">Pegá el contenido acá</span>
+      <div style="margin-left: auto; display: flex; gap: 6px; align-items: center;">
+        <button class="sample-btn" onclick="loadSample()">cargar ejemplo</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="inputTabs">
+      <div class="tab active" data-tab="input-export">Export / SQL</div>
+      <div class="tab" data-tab="input-packages">Packages / Procs</div>
+      <div class="tab" data-tab="input-context">Contexto adicional</div>
+    </div>
+
+    <div class="panel-body">
+      <div id="input-export" class="tab-content active">
+        <textarea id="inputExport" placeholder="Pegá acá el export de la página APEX, código SQL de regiones, procesos PL/SQL, dynamic actions, validaciones, LOVs, branches, queries de reportes...
+
+Ejemplo:
+SELECT e.emp_id, e.emp_name, d.dept_name
+FROM employees e
+JOIN departments d ON e.dept_id = d.dept_id
+WHERE e.status = :P1_STATUS
+
+DECLARE
+  v_result NUMBER;
+BEGIN
+  v_result := pkg_employees.get_salary(:P1_EMP_ID);
+  :P2_SALARY := v_result;
+END;"></textarea>
+      </div>
+      <div id="input-packages" class="tab-content">
+        <textarea id="inputPackages" placeholder="Pegá acá código de packages, procedures o functions referenciados desde la página...
+
+Ejemplo:
+PACKAGE pkg_employees AS
+  FUNCTION get_salary(p_emp_id NUMBER) RETURN NUMBER;
+  PROCEDURE update_status(p_emp_id NUMBER, p_status VARCHAR2);
+END pkg_employees;"></textarea>
+      </div>
+      <div id="input-context" class="tab-content">
+        <textarea id="inputContext" placeholder="Contexto adicional: nombre del esquema origen, nombre del esquema destino, errores observados, comportamiento esperado, notas sobre la página...
+
+Ejemplo:
+- Esquema origen: HR_PROD
+- Esquema destino: HR_TEST
+- Error observado: ORA-00942: table or view does not exist
+- La página es un formulario de edición de empleados con sub-reporte de historial"></textarea>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="analyzeBtn" onclick="analyze()">
+        Analizar página
+      </button>
+      <button class="btn btn-ghost" onclick="clearAll()">Limpiar</button>
+      <span class="char-count" id="charCount">0 chars</span>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Output -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Análisis técnico</span>
+      <span class="badge accent" id="statusBadge">esperando</span>
+      <div style="margin-left: auto; display: flex; gap: 6px;">
+        <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 10px;" onclick="copyOutput()">copiar</button>
+        <button class="btn btn-ghost" style="font-size: 11px; padding: 4px 10px;" onclick="exportMd()">exportar .md</button>
+      </div>
+    </div>
+
+    <div class="panel-body" id="outputPanel">
+      <div class="empty-state">
+        <div class="icon">⬡</div>
+        <p>Pegá el contenido de tu página APEX<br>en el panel izquierdo y hacé clic en <strong>Analizar página</strong>.</p>
+        <br>
+        <p style="font-size: 11px; color: var(--text3);">El análisis detecta tablas, packages, procedures, views,<br>sequences, triggers y dependencias entre esquemas.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SYSTEM_PROMPT = `Actuá como un analista técnico senior experto en Oracle APEX, PL/SQL y Oracle Database.
+
+Cuando el usuario te pase contenido de una página APEX (exports, SQL, PL/SQL, packages, procesos, LOVs, etc.), realizá un relevamiento técnico completo e identificá todos los objetos de base de datos que esa página utiliza o podría depender para funcionar correctamente, con el objetivo de verificar si esos objetos están actualizados en otro esquema o entorno.
+
+## Lo que necesito que hagas
+
+Analizá todo el contenido y armá un relevamiento técnico completo indicando:
+
+### 1. Resumen funcional de la página
+Describí en 2-4 líneas qué hace la página, qué proceso de negocio implementa.
+
+### 2. Inventario de objetos detectados
+
+#### Tablas involucradas
+- tablas principales usadas directamente
+- tablas usadas indirectamente por packages, views, triggers o procesos
+- tablas de detalle, maestras, staging si aparecen
+
+#### Objetos PL/SQL involucrados
+- packages, package bodies, procedures, functions, triggers, jobs, sequences, sinónimos
+
+#### Otros objetos Oracle
+- views, materialized views, tipos, colecciones APEX, funciones en SQL
+
+### 3. Dependencias inferidas
+Para cada objeto, indicá:
+- por qué participa en la página
+- en qué parte de la página aparece
+- si es directa o indirecta
+- qué riesgo si falta o está desactualizado
+
+### 4. Tabla principal de análisis
+Generá una tabla markdown con estas columnas exactas:
+| Objeto | Tipo | Uso en la página | Evidencia | Dependencia | Qué validar | Prioridad | Observaciones |
+
+Donde:
+- Tipo: TABLE / VIEW / PACKAGE / PROCEDURE / FUNCTION / TRIGGER / SEQUENCE / SYNONYM / TYPE / MV / JOB
+- Dependencia: DIRECTA / INDIRECTA
+- Prioridad: ALTA / MEDIA / BAJA
+- Qué validar: breve lista de lo que comparar entre esquemas
+
+### 5. Checklist de validación entre esquemas
+Un checklist agrupado por tipo de objeto de todo lo que hay que verificar.
+
+### 6. Riesgos y faltantes potenciales
+Listá los riesgos más críticos si algún objeto falta o está desactualizado.
+
+## Criterios
+- Separar claramente CONFIRMADO (aparece explícitamente) de INFERIDO (deducido por contexto)
+- Inferí dependencias a partir de llamadas a packages, procesos, LOVs, validaciones
+- Si un package es mencionado, intentá deducir qué tablas usaría
+- Prestá atención a: INSERT/UPDATE/DELETE, SELECT de reportes, procesos AJAX, APEX_COLLECTION, secuencias para PK, triggers BEFORE INSERT, LOVs compartidas, grants entre esquemas
+- Respondé siempre en español
+- Usá formato markdown con tablas y encabezados`;
+
+let rawOutput = '';
+let isStreaming = false;
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const container = tab.closest('.panel');
+    container.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const target = tab.dataset.tab;
+    container.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+// Character counter
+['inputExport','inputPackages','inputContext'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateCharCount);
+});
+
+function updateCharCount() {
+  const total = ['inputExport','inputPackages','inputContext']
+    .reduce((acc, id) => acc + document.getElementById(id).value.length, 0);
+  document.getElementById('charCount').textContent = total.toLocaleString() + ' chars';
+}
+
+// API key indicator
+document.getElementById('apiKey').addEventListener('input', function() {
+  document.getElementById('keyDot').className = 'dot ' + (this.value.startsWith('sk-ant-') ? 'on' : '');
+});
+
+function getApiKey() {
+  return document.getElementById('apiKey').value.trim();
+}
+
+function buildContent() {
+  const parts = [];
+  const exp = document.getElementById('inputExport').value.trim();
+  const pkg = document.getElementById('inputPackages').value.trim();
+  const ctx = document.getElementById('inputContext').value.trim();
+  if (exp) parts.push('## Export / SQL de la página APEX\n\n' + exp);
+  if (pkg) parts.push('## Código de Packages / Procedures referenciados\n\n' + pkg);
+  if (ctx) parts.push('## Contexto adicional\n\n' + ctx);
+  return parts.join('\n\n---\n\n');
+}
+
+async function analyze() {
+  if (isStreaming) return;
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    showError('Ingresá tu API key de Anthropic en el campo de arriba (sk-ant-...)');
+    return;
+  }
+  const content = buildContent();
+  if (!content.trim()) {
+    showError('Pegá el contenido de la página APEX antes de analizar.');
+    return;
+  }
+
+  isStreaming = true;
+  rawOutput = '';
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('statusBadge').textContent = 'analizando...';
+
+  const outputPanel = document.getElementById('outputPanel');
+  outputPanel.innerHTML = '<div class="thinking"><div class="spinner"></div><span>Analizando dependencias de la página APEX...</span></div>';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        stream: true,
+        messages: [{ role: 'user', content: content }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${response.status}`);
+    }
+
+    outputPanel.innerHTML = '<div class="output-area md streaming" id="mdOutput"></div>';
+    const mdEl = document.getElementById('mdOutput');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(data);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              rawOutput += evt.delta.text;
+              mdEl.innerHTML = renderMarkdown(rawOutput);
+            }
+          } catch {}
+        }
+      }
+    }
+
+    document.getElementById('statusBadge').textContent = 'completado';
+  } catch (err) {
+    showError('Error: ' + err.message);
+    document.getElementById('statusBadge').textContent = 'error';
+  } finally {
+    isStreaming = false;
+    document.getElementById('analyzeBtn').disabled = false;
+  }
+}
+
+function showError(msg) {
+  document.getElementById('outputPanel').innerHTML = `<div class="error-msg">${msg}</div>`;
+  document.getElementById('statusBadge').textContent = 'error';
+}
+
+function renderMarkdown(text) {
+  let html = text;
+
+  // Code blocks first
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escHtml(code.trim())}</code></pre>`);
+
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+
+  // Tables
+  html = html.replace(/(\|.+\|\n)+/g, match => {
+    const rows = match.trim().split('\n');
+    if (rows.length < 2) return match;
+    let out = '<table>';
+    rows.forEach((row, i) => {
+      if (row.match(/^\|[\s\-|]+\|$/)) return; // separator
+      const cells = row.split('|').filter((_, ci) => ci > 0 && ci < row.split('|').length - 1);
+      const tag = i === 0 ? 'th' : 'td';
+      out += '<tr>' + cells.map(c => {
+        const trimmed = c.trim();
+        const tagOut = tag === 'th' ? `<th>${trimmed}</th>` :
+          `<td>${applyPrioBadge(trimmed)}</td>`;
+        return tagOut;
+      }).join('') + '</tr>';
+    });
+    return out + '</table>';
+  });
+
+  // HR
+  html = html.replace(/^---$/gm, '<hr>');
+
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // Italic
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // Blockquote
+  html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+
+  // Unordered lists
+  html = html.replace(/((?:^[-*] .+\n?)+)/gm, match => {
+    const items = match.trim().split('\n').map(l => `<li>${l.replace(/^[-*] /, '')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
+
+  // Ordered lists
+  html = html.replace(/((?:^\d+\. .+\n?)+)/gm, match => {
+    const items = match.trim().split('\n').map(l => `<li>${l.replace(/^\d+\. /, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
+
+  // Paragraphs
+  html = html.replace(/^(?!<[htupbocd])(.+)$/gm, (m, line) => {
+    if (!line.trim()) return '';
+    return `<p>${line}</p>`;
+  });
+
+  return html;
+}
+
+function applyPrioBadge(text) {
+  if (text === 'ALTA') return '<span class="prio-alta">ALTA</span>';
+  if (text === 'MEDIA') return '<span class="prio-media">MEDIA</span>';
+  if (text === 'BAJA') return '<span class="prio-baja">BAJA</span>';
+  return text;
+}
+
+function escHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function clearAll() {
+  ['inputExport','inputPackages','inputContext'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  updateCharCount();
+  rawOutput = '';
+  document.getElementById('outputPanel').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">⬡</div>
+      <p>Pegá el contenido de tu página APEX<br>en el panel izquierdo y hacé clic en <strong>Analizar página</strong>.</p>
+    </div>`;
+  document.getElementById('statusBadge').textContent = 'esperando';
+}
+
+function copyOutput() {
+  if (!rawOutput) return;
+  navigator.clipboard.writeText(rawOutput).then(() => {
+    const btn = event.target;
+    btn.textContent = 'copiado!';
+    setTimeout(() => btn.textContent = 'copiar', 1500);
+  });
+}
+
+function exportMd() {
+  if (!rawOutput) return;
+  const blob = new Blob([rawOutput], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'apex-schema-analysis.md';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadSample() {
+  document.getElementById('inputExport').value = `-- Región: Employees Report
+SELECT e.employee_id,
+       e.first_name || ' ' || e.last_name AS full_name,
+       e.email,
+       d.department_name,
+       j.job_title,
+       e.salary,
+       e.hire_date,
+       e.status_code,
+       pkg_hr_utils.get_manager_name(e.manager_id) AS manager_name
+FROM   employees e
+       JOIN departments d ON e.department_id = d.department_id
+       JOIN jobs j ON e.job_id = j.job_id
+WHERE  e.status_code = NVL(:P10_STATUS_FILTER, e.status_code)
+AND    (:P10_DEPT_FILTER IS NULL OR e.department_id = :P10_DEPT_FILTER)
+ORDER BY e.last_name;
+
+-- Proceso: Save Employee (PL/SQL)
+DECLARE
+  v_emp_id NUMBER;
+BEGIN
+  IF :P10_EMPLOYEE_ID IS NULL THEN
+    SELECT seq_employees.NEXTVAL INTO v_emp_id FROM DUAL;
+    INSERT INTO employees (employee_id, first_name, last_name, email,
+                           department_id, job_id, salary, hire_date, status_code)
+    VALUES (v_emp_id, :P10_FIRST_NAME, :P10_LAST_NAME, :P10_EMAIL,
+            :P10_DEPARTMENT_ID, :P10_JOB_ID, :P10_SALARY, SYSDATE, 'ACTIVE');
+    pkg_hr_utils.log_audit_event('INSERT', 'EMPLOYEES', v_emp_id, :APP_USER);
+  ELSE
+    UPDATE employees
+    SET    first_name    = :P10_FIRST_NAME,
+           last_name     = :P10_LAST_NAME,
+           email         = :P10_EMAIL,
+           department_id = :P10_DEPARTMENT_ID,
+           job_id        = :P10_JOB_ID,
+           salary        = :P10_SALARY
+    WHERE  employee_id   = :P10_EMPLOYEE_ID;
+    pkg_hr_utils.log_audit_event('UPDATE', 'EMPLOYEES', :P10_EMPLOYEE_ID, :APP_USER);
+  END IF;
+  APEX_COLLECTION.CREATE_OR_TRUNCATE_COLLECTION('MODIFIED_EMPS');
+  APEX_COLLECTION.ADD_MEMBER('MODIFIED_EMPS', TO_CHAR(v_emp_id));
+  COMMIT;
+END;
+
+-- LOV: Departments (shared)
+SELECT department_name AS display, department_id AS return
+FROM   departments
+WHERE  active_flag = 'Y'
+ORDER BY department_name;
+
+-- Validación: Email único
+SELECT COUNT(*)
+FROM   employees
+WHERE  email = :P10_EMAIL
+AND    employee_id != NVL(:P10_EMPLOYEE_ID, -1);`;
+
+  document.getElementById('inputPackages').value = `-- pkg_hr_utils (spec parcial)
+PACKAGE pkg_hr_utils AS
+  FUNCTION get_manager_name(p_mgr_id NUMBER) RETURN VARCHAR2;
+  PROCEDURE log_audit_event(p_action VARCHAR2, p_table VARCHAR2, p_record_id NUMBER, p_user VARCHAR2);
+  FUNCTION validate_email_domain(p_email VARCHAR2) RETURN BOOLEAN;
+END pkg_hr_utils;`;
+
+  document.getElementById('inputContext').value = `- Esquema origen: HR_PROD
+- Esquema destino: HR_TEST (entorno de testing recién creado)
+- Página 10: Employee Management Form
+- Error observado en destino: ORA-00942 table or view does not exist
+- También se ve ORA-04044: procedure, function, package, or type is not allowed here
+- La página tiene sub-reporte de job history que no cargamos acá todavía`;
+
+  updateCharCount();
+
+  // Switch to first tab
+  document.querySelectorAll('#inputTabs .tab')[0].click();
+}
+</script>
+</body>
+</html>
